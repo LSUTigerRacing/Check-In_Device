@@ -135,7 +135,10 @@ void setup() {
   }
 }
 
-// --- Main Loop ---
+void AddUserSupabase(String user){
+  db.insert("esp",user,false);
+}
+
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
@@ -146,7 +149,10 @@ void loop() {
   if (millis() - lastPrint > 10000) { 
     if (WiFi.status() == WL_CONNECTED) {
       Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      db.insert("table","data", false); //change this (table name, data, bool upsert)
+      int code = db.insert("table","data", false); //change this (table name, data, bool upsert)
+      Serial.println(code);
+      db.urlQuery_reset();
+
     } else {
       Serial.print("Status: ");
       printWiFiStatus(WiFi.status());
