@@ -11,7 +11,7 @@ Supabase db;
 
 #define EAP_IDENTITY "@lsu.edu"
 #define EAP_USERNAME "@lsu.edu"
-#define EAP_PASSWORD "s" 
+#define EAP_PASSWORD "pass" 
 
 WebServer server(80);
 
@@ -136,9 +136,10 @@ void setup() {
 }
 
 void AddUserSupabase(String user){
-  db.insert("esp",user,false);
+  String t = "[{\"name\": " + user + ", \"created_at\": \"2025-11-07T01:43:47.178071+00:00\"}]";
+  int code  = db.insert("esp",t,false); //(String: table name, String: JSON, Bool: Upsert )
+  Serial.println(code);
 }
-
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
@@ -149,9 +150,8 @@ void loop() {
   if (millis() - lastPrint > 10000) { 
     if (WiFi.status() == WL_CONNECTED) {
       Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      int code = db.insert("table","data", false); //change this (table name, data, bool upsert)
-      Serial.println(code);
-      db.urlQuery_reset();
+      AddUserSupabase("asd"); //this adds user every 10 secs, will be modified soon
+      db.urlQuery_reset(); //IMPORTANT: this is required after every supabase exec
 
     } else {
       Serial.print("Status: ");
