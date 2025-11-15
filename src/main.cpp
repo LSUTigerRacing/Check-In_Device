@@ -1,4 +1,4 @@
-#include <arduino.h>
+#include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
 
@@ -7,15 +7,25 @@
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 
+int pinLED = 2; // Green LED
+int pinLED2 = 7; // Red LED
+
+//AFFECTED 
 //Starts communication with RFID reader and computer, prepares everything, and tells user to scan card
 void setup() {
   Serial.begin(9600);                                          
   SPI.begin();                                                  
   mfrc522.PCD_Init();                                             
-  Serial.println(F("Read personal data on a MIFARE PICC:"));    
+  Serial.println(F("Read personal data on a MIFARE PICC:")); 
+  pinMode(pinLED, OUTPUT);
+  pinMode(pinLED2, OUTPUT);   
 }
 
 void loop() {
+
+  //LEDS staying off early in case of LED glitches
+  digitalWrite(pinLED, LOW);
+  digitalWrite(pinLED2, LOW);
 
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
@@ -34,10 +44,13 @@ void loop() {
   if ( ! mfrc522.PICC_ReadCardSerial()) {
     return;
   }
-
+  
+  digitalWrite(pinLED2, HIGH); //Non-blinking red LED indicates the card has been detected
   Serial.println(F("**Card Detected:**")); 
   mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid)); 
   Serial.print(F("Name: ")); 
+  delay(1000);
+  digitalWrite(pinLED2, LOW);
 
   byte buffer1[18]; 
   block = 4; 
@@ -47,14 +60,29 @@ void loop() {
   //If the card being read was failed then the code returns to the loop itself until the card was read successfully 
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("Reading failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
+    Serial.println(mfrc522.GetStatusCodeName(status)); //Blinking red LED, indicating the reading has failed
+    for (int i = 0; i < 3; i++) { 
+      digitalWrite(pinLED2, HIGH);
+      delay(100);
+      digitalWrite(pinLED2, LOW);
+      delay(100);
+    }
     return;
+  }
+
+  //Blinking green LED indicates the card being read was a success 
+  for (int i = 0; i < 3; i++) { 
+    digitalWrite(pinLED, HIGH);
+    delay(100);
+    digitalWrite(pinLED, LOW);
+    delay(100);
   }
 
   //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
   for (uint8_t i = 0; i < 16; i++) {
     Serial.write(buffer1[i] );
   }
+
 
   Serial.println(F("\n**End Reading**\n")); 
 
@@ -63,4 +91,3 @@ void loop() {
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
 }
-
