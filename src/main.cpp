@@ -50,8 +50,7 @@ void loop() {
   if (millis() - lastPrint > 10000) {
     if (WiFiIsConnected()) {
       Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      int code = supabaseAddUser("asd"); // will be changed later
-      Serial.println(code);
+      AddUserSupabase("asd"); // will be changed later
       supabaseResetQuery();
     } else {
       Serial.print("Status: ");
