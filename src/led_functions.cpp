@@ -5,7 +5,7 @@
 #define NUM_LEDS 1
 Adafruit_NeoPixel rgb_led(NUM_LEDS, RGB_PIN, NEO_GRB + NEO_KHZ800);
 
-//Prepares the LEd to work
+//Prepares the LED to work
 void initLED() {
   rgb_led.begin();
   rgb_led.show();
