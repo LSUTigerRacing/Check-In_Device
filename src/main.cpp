@@ -1,14 +1,10 @@
-#include <Arduino.h>
-#include "MySD.hpp"
-#include <SPI.h>
-
-#define SD_CS_PIN 9 // Connected to HSPI (SPI 2) Refer to ESP32-S3 documentation for wiring
-// put function declarations here:
-int myFunction(int, int);
+#include "MySD.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include "LSUWiFi.h"
 #include "SupabaseWrapper.h"
+
+#define SD_CS_PIN 9
 
 const char* ssid = "eduroam";
 
@@ -16,6 +12,11 @@ const char* ssid = "eduroam";
 #define EAP_USERNAME "@lsu.edu"
 #define EAP_PASSWORD "pass"
 
+const char* ntp_server = "pool.ntp.org";
+//This puts the time to GMT-6 which correlates to CST
+const long gmtOffset_sec = -21600;
+const long daylightOffset_sec = 3600;
+struct tm time_info;
 WebServer server(80);
 
 void setup() {
@@ -37,7 +38,7 @@ void setup() {
 
     // initialize supabase
     supabaseBegin("SupabaseURL", "SupabaseKey");
-
+    configTime(gmtOffset_sec,daylightOffset_sec,ntp_server);
     setupRootHandler(server);
     server.begin();
     Serial.println("Web server started successfully.");
@@ -46,13 +47,22 @@ void setup() {
     Serial.print("Final Status Code: ");
     WiFiPrintStatus(WiFiStatus());
   }
+
+  if(SD.begin(SD_CS_PIN)){
+    Serial.println("SD card module detected");
+    getLocalTime(&time_info);
+    YearFolder_init(time_info.tm_hour);
+  }
+  else{
+    Serial.println("SD card module not detected");
+  }
+
 }
 
 void loop() {
   if (WiFiIsConnected()) {
     server.handleClient();
   }
-
   static unsigned long lastPrint = 0;
   if (millis() - lastPrint > 10000) {
     if (WiFiIsConnected()) {
@@ -65,4 +75,11 @@ void loop() {
     }
     lastPrint = millis();
   }
+
+  bool check_in = true;
+  if(check_in){
+    getLocalTime(&time_info);
+    addTimestamp("Bobby Hill",&time_info); //Replace Bobby Hill with name variable
+  }
 }
+ 
