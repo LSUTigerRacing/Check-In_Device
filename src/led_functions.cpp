@@ -1,4 +1,4 @@
-#include <Adafruit_NeoPixel.h>
+#include "led_functions.h"
 
 //Defining ESP32 LEDs
 #define RGB_PIN 47

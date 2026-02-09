@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
-#include "led_functions.cpp"
+#include "led_functions.h"
 
-#define RST_PIN         9           
+#define RST_PIN         2           
 #define SS_PIN          10          
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
