@@ -6,7 +6,7 @@ void fileCreate(char *path, String month){
         path[6+i] = month.charAt(i);
     }
     File file = SD.open(path,FILE_WRITE);
-    file.write("Day,Time,User\n");
+    file.printf("%s","Day,Time,User\n");
     file.close();
 }
 
@@ -85,6 +85,6 @@ void addTimestamp(String user,struct tm* timestamp){
 //    JsonDocument doc;
 //    serializeJson(doc,month_file);
     String entry = timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
-    month_file.write(entry.c_str());
+    month_file.printf("%s",entry.c_str());
     month_file.close();
 }
