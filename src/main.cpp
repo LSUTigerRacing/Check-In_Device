@@ -5,13 +5,15 @@
 
 #define RST_PIN         2           
 #define SS_PIN          10          
-
+#define MISO            5
+#define MOSI            6
+#define SCLK            4
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 
 //Starts communication with RFID reader and computer, prepares everything, and tells user to scan card
 void setup() {
-  Serial.begin(9600);                                          
-  SPI.begin();                                                  
+  Serial.begin(115200);                                          
+  SPI.begin(SCLK,MISO,MOSI,SS_PIN);                                                  
   mfrc522.PCD_Init();                                             
   Serial.println(F("Read personal data on a MIFARE PICC:")); 
 }
