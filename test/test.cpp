@@ -7,7 +7,7 @@
 MFRC522DriverPinSimple ss_pin(10); // Configurable, see typical pin layout above.
 
 MFRC522DriverSPI driver{ss_pin}; // Create SPI driver.
-MFRC522DriverI2C driver{}; // Create I2C driver.
+//MFRC522DriverI2C driver{}; // Create I2C driver.
 MFRC522 mfrc522{driver};  // Create MFRC522 instance.
 
 /**
