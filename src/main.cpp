@@ -19,6 +19,11 @@ void setup() {
 }
 
 void loop() {
+  
+  //Adds data block for the MIRARE_Write
+  byte dataBlock[16] = {
+  'T','I','G','E','R',' ','R','A','C','I','N','G',' ','!','!','!'
+  };
 
   //LED staying off early in case of LED glitches
   setColor(0, 0, 0);
@@ -48,6 +53,38 @@ void loop() {
   Serial.print(F("Name: ")); 
   delay(1000);
   setColor(0, 0, 0);
+
+  byte trailerBlock = 7;
+  block = 4;
+
+  //Sets up the aunthetication
+  status = mfrc522.PCD_Authenticate(
+    MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+    trailerBlock,
+    &key,
+    &(mfrc522.uid)
+  );
+
+  //If status falled for authentication, then authentication fails and blinks red to indicate so
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print(F("Authentication failed: "));
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    flashColor(255, 0, 0, 3, 100, 100);
+    return;
+  }
+
+  //Sets up the writing for MIFARE
+  status = mfrc522.MIFARE_Write(block, dataBlock, 16);
+
+  //If status falled for MIFARE_Write, then the write fails and blinks red to indicate so 
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print(F("Write failed: "));
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    flashColor(255, 0, 0, 3, 100, 100);
+    return;
+  }
+
+  Serial.println(F("Write success"));
 
   byte buffer1[18]; 
   block = 4; 
