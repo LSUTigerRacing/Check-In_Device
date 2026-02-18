@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include "LSUWiFi.h"
+#include "SupabaseWrapper.h"
 #include <SPI.h>
 #include <MFRC522.h>
 #include "led_functions.h"
@@ -8,9 +12,16 @@
 #define MISO            13
 #define MOSI            11
 #define SCLK            12
-   
+
+const char* ssid = "eduroam";
+
+#define EAP_IDENTITY "@lsu.edu"
+#define EAP_USERNAME "@lsu.edu"
+#define EAP_PASSWORD "pass"
+
+WebServer server(80);
 MFRC522 mfrc522(SS_PIN,RST_PIN);
-//Starts communication with RFID reader and computer, prepares everything, and tells user to scan card
+
 void setup() {
   Serial.begin(115200);
   while(!Serial);                       
@@ -18,17 +29,42 @@ void setup() {
   delay(200);                                           
   mfrc522.PCD_Init();                                             
   mfrc522.PCD_DumpVersionToSerial();
+
+  Serial.println("\n\n=== ESP32 WPA2 Enterprise Web Server ===");
+
+  LSUWiFiSetup(ssid, EAP_IDENTITY, EAP_USERNAME, EAP_PASSWORD);
+  
+  Serial.print("Waiting for connection");
+  bool connected = WiFiWaitForConnection(60);
+  Serial.println();
+
+  if (connected) {
+    Serial.println("\n\u2713 WPA2 ENTERPRISE SUCCESS!");
+    Serial.print("Server IP: ");
+    Serial.println(WiFi.localIP());
+
+    // initialize supabase
+    supabaseBegin("SupabaseURL", "SupabaseKey");
+
+    setupRootHandler(server);
+    server.begin();
+    Serial.println("Web server started successfully.");
+  } else {
+    Serial.println("\n\u2717 FAILED TO CONNECT");
+    Serial.print("Final Status Code: ");
+    WiFiPrintStatus(WiFiStatus());
+  }
 }
 
 void loop() {
-  
+  if (WiFiIsConnected()) {
+    server.handleClient();
+  }
   //Adds data block for the MIRARE_Write
   byte dataBlock[16] = {
   'T','I','G','E','R',' ','R','A','C','I','N','G',' ','!','!','!'
   };
 
-  //LED staying off early in case of LED glitches
-  setColor(0, 0, 0);
 
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
@@ -52,6 +88,20 @@ void loop() {
   setColor(255, 0, 0);
   Serial.println(F("**Card Detected:**")); 
   mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid)); 
+  
+  static unsigned long lastPrint = 0;
+  if (millis() - lastPrint > 10000) {
+    if (WiFiIsConnected()) {
+      Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+      AddUserSupabase("asd"); // will be changed later
+      supabaseResetQuery();
+    } else {
+      Serial.print("Status: ");
+      WiFiPrintStatus(WiFiStatus());
+    }
+    lastPrint = millis();
+  }
+  
   Serial.print(F("Name: ")); 
   delay(1000);
   setColor(0, 0, 0);
