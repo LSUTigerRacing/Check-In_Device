@@ -60,11 +60,6 @@ void loop() {
   if (WiFiIsConnected()) {
     server.handleClient();
   }
-  //Adds data block for the MIRARE_Write
-  byte dataBlock[16] = {
-  'T','I','G','E','R',' ','R','A','C','I','N','G',' ','!','!','!'
-  };
-
 
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
@@ -125,19 +120,6 @@ void loop() {
     return;
   }
 
-  //Sets up the writing for MIFARE
-  status = mfrc522.MIFARE_Write(block, dataBlock, 16);
-
-  //If status falled for MIFARE_Write, then the write fails and blinks red to indicate so 
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Write failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    flashColor(255, 0, 0, 3, 100, 100);
-    return;
-  }
-
-  Serial.println(F("Write success"));
-
   byte buffer1[18]; 
   block = 4; 
   len = 18; 
@@ -150,13 +132,26 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
+  else{
+    String uid;
+    for(uint8_t i = 0; i < 16; i++){
+      uid += buffer1[i];
+      Serial.write(buffer1[i]); //For debugging
+    }
+    //Add SD check for both to see if user has entered
+    bool present;
 
-  //Blinking green LED indicates the card being read was a success 
-  flashColor(0, 255, 0, 3, 100, 100);
-
-  //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
-  for (uint8_t i = 0; i < 16; i++) {
-    Serial.write(buffer1[i] );
+    //Unhighlight based on deployment
+    if(present){
+      RemoveInOffice(uid);
+      //RemoveInShop(uid);
+      flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
+    }
+    else{
+      AddInOffice(uid);
+      //AddInShop(uid);
+      flashColor(0, 255, 0, 3, 100, 100); //blinks green 3 times
+    }
   }
 
   Serial.println(F("\n**End Reading**\n")); 
