@@ -82,9 +82,76 @@ void addTimestamp(String user,struct tm* timestamp){
         Serial.print("Failed to open ");
         Serial.println(month_filepath);
     }
-//    JsonDocument doc;
-//    serializeJson(doc,month_file);
     String entry = timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
     month_file.printf("%s",entry.c_str());
     month_file.close();
+}
+
+void userSDInit(String userList){
+    if(SD.exists("UserList.csv")){
+        SD.remove("UserList.csv");
+    }
+    File userFile = SD.open("UserList.csv",FILE_WRITE);
+    String user; 
+    userFile.printf("%s","ID,Name,InOffice,InShop,Ack\n");
+    //Replace 50 with actual row length
+    for(int i =0; i <user.length(); i + 50 ) {
+        user = userList.substring(i, i + i );
+        userFile.printf("%s", user);
+        userFile.print("\n");
+    }
+    userFile.close();
+}
+
+bool checkForPresence(String id, bool office, bool shop){
+    const char* idPtr = id.c_str();
+    File userList = SD.open("UserList.csv",FILE_READ);
+    char* csv_str = (char*)malloc(29 * sizeof(char));
+    strcat(csv_str,"ID,Name,InOffice,InShop,Ack\n");
+    bool newEntry = false;
+    while(userList.available()){
+        char *entry;
+        while(!newEntry){
+            if(userList.read() == ' '){
+                newEntry = true;
+            }
+            entry = (char*)malloc(sizeof(entry) + sizeof(char));
+            uint8_t *charRead;
+            userList.read(charRead,sizeof(char));
+            strcat(entry,(char*) charRead);
+
+        }
+        csv_str = (char*)malloc(sizeof(csv_str) + sizeof(entry) + 1);
+        strcat(csv_str,entry);
+    }
+    CSV_Parser csvP(csv_str,"ud-ucuc-");
+    char **strings = (char**)csvP["ID"];
+    uint8_t *officeVal = (uint8_t *)csvP["InOffice"];
+    uint8_t *shopVal = (uint8_t *)csvP["InShop"];
+    for(int i = 0; i < csvP.getRowsCount(); i++){
+        if(strcmp(strings[i],idPtr) != 0){
+            break;
+        }
+        if(office){
+            if(officeVal[i] == 1){
+                officeVal[i] = 0;
+                return false;
+            }
+            else{
+                officeVal[i] = 1;
+                return true;
+            }
+        }
+        else if(shop){
+            if(shopVal[i] == 1){
+                shopVal[i] = 0;
+                return false;
+            }
+            else{
+                shopVal[i] = 1;
+                return true;
+            }
+        }
+        
+    }
 }
