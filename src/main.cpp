@@ -52,6 +52,8 @@ void setup() {
     Serial.println("SD card module detected");
     getLocalTime(&time_info);
     YearFolder_init(time_info.tm_hour);
+    String userList;
+    userSDInit(userList);
   }
   else{
     Serial.println("SD card module not detected");
@@ -67,19 +69,22 @@ void loop() {
   if (millis() - lastPrint > 10000) {
     if (WiFiIsConnected()) {
       Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      AddUserSupabase("asd"); // will be changed later
-      supabaseResetQuery();
     } else {
       Serial.print("Status: ");
       WiFiPrintStatus(WiFiStatus());
     }
     lastPrint = millis();
   }
-
-  bool check_in = true;
+  byte buffer[16];
+  char userID[17];
+  for(int i =0; i < 16; i++){
+    userID[i] = buffer[i];
+  }
+  userID[16] = '\0';
+  bool check_in = checkForPresense(userID,true,false);
   if(check_in){
     getLocalTime(&time_info);
-    addTimestamp("Bobby Hill",&time_info); //Replace Bobby Hill with name variable
+    addTimestamp(userID,&time_info);
   }
 }
  

@@ -106,52 +106,58 @@ void userSDInit(String userList){
 bool checkForPresence(String id, bool office, bool shop){
     const char* idPtr = id.c_str();
     File userList = SD.open("UserList.csv",FILE_READ);
-    char* csv_str = (char*)malloc(29 * sizeof(char));
-    strcat(csv_str,"ID,Name,InOffice,InShop,Ack\n");
-    bool newEntry = false;
+    char* csv_str = (char *)malloc(strlen("ID,Name,InOffice,InShop,Ack\n") + 1);
+    strcpy(csv_str,"ID,Name,InOffice,InShop,Ack\n");
     while(userList.available()){
-        char *entry;
+        char *entry = (char*)malloc(sizeof(char));
+        entry= '\0';
+        bool newEntry = false;
         while(!newEntry){
-            if(userList.read() == ' '){
-                newEntry = true;
-            }
-            entry = (char*)malloc(sizeof(entry) + sizeof(char));
-            uint8_t *charRead;
+            entry = (char*)realloc(entry, strlen(entry) + sizeof(char));
+            uint8_t charRead[2] = {0,0};
             userList.read(charRead,sizeof(char));
+            if(charRead[0] == '\n'){
+                newEntry = true;
+                break;
+            }
             strcat(entry,(char*) charRead);
-
         }
-        csv_str = (char*)malloc(sizeof(csv_str) + sizeof(entry) + 1);
+        csv_str = (char*)realloc(csv_str, strlen(csv_str) + strlen(entry) + 1);
         strcat(csv_str,entry);
+        free(entry);
+        entry = NULL;
     }
     CSV_Parser csvP(csv_str,"ud-ucuc-");
+    free(csv_str);
+    csv_str = NULL;
     char **strings = (char**)csvP["ID"];
     uint8_t *officeVal = (uint8_t *)csvP["InOffice"];
     uint8_t *shopVal = (uint8_t *)csvP["InShop"];
+    bool present;
     for(int i = 0; i < csvP.getRowsCount(); i++){
-        if(strcmp(strings[i],idPtr) != 0){
-            break;
-        }
-        if(office){
+        if(strcmp(strings[i],idPtr) == 0){
+            if(office){
             if(officeVal[i] == 1){
                 officeVal[i] = 0;
-                return false;
-            }
+                present = false;
+                }
             else{
                 officeVal[i] = 1;
-                return true;
+                present = true;
+                }
             }
-        }
         else if(shop){
             if(shopVal[i] == 1){
                 shopVal[i] = 0;
-                return false;
-            }
+                present = false;
+                }
             else{
                 shopVal[i] = 1;
-                return true;
+                present = true;
+                }
             }
         }
-        
     }
+    userList.close();
+    return present;
 }
