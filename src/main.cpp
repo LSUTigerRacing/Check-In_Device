@@ -1,3 +1,4 @@
+#include "MySD.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -13,12 +14,19 @@
 #define MOSI            11
 #define SCLK            12
 
+#define SD_CS_PIN 9
+
 const char* ssid = "eduroam";
 
 #define EAP_IDENTITY "@lsu.edu"
 #define EAP_USERNAME "@lsu.edu"
 #define EAP_PASSWORD "pass"
 
+const char* ntp_server = "pool.ntp.org";
+//This puts the time to GMT-6 which correlates to CST
+const long gmtOffset_sec = -21600;
+const long daylightOffset_sec = 3600;
+struct tm time_info;
 WebServer server(80);
 MFRC522 mfrc522(SS_PIN,RST_PIN);
 
@@ -45,7 +53,7 @@ void setup() {
 
     // initialize supabase
     supabaseBegin("SupabaseURL", "SupabaseKey");
-
+    configTime(gmtOffset_sec,daylightOffset_sec,ntp_server);
     setupRootHandler(server);
     server.begin();
     Serial.println("Web server started successfully.");
@@ -54,6 +62,18 @@ void setup() {
     Serial.print("Final Status Code: ");
     WiFiPrintStatus(WiFiStatus());
   }
+
+  if(SD.begin(SD_CS_PIN)){
+    Serial.println("SD card module detected");
+    getLocalTime(&time_info);
+    YearFolder_init(time_info.tm_hour);
+    String userList;
+    userSDInit(userList);
+  }
+  else{
+    Serial.println("SD card module not detected");
+  }
+
 }
 
 void loop() {
@@ -93,13 +113,22 @@ void loop() {
   if (millis() - lastPrint > 10000) {
     if (WiFiIsConnected()) {
       Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      AddUserSupabase("asd"); // will be changed later
-      supabaseResetQuery();
     } else {
       Serial.print("Status: ");
       WiFiPrintStatus(WiFiStatus());
     }
     lastPrint = millis();
+  }
+  byte buffer[16];
+  char userID[17];
+  for(int i =0; i < 16; i++){
+    userID[i] = buffer[i];
+  }
+  userID[16] = '\0';
+  bool check_in = checkForPresense(userID,true,false);
+  if(check_in){
+    getLocalTime(&time_info);
+    addTimestamp(userID,&time_info);
   }
   
   Serial.print(F("Name: ")); 
@@ -166,3 +195,4 @@ void loop() {
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
 }
+ 
