@@ -110,17 +110,17 @@ bool checkForPresence(String id, bool office, bool shop){
     strcpy(csv_str,"ID,Name,InOffice,InShop,Ack\n");
     while(userList.available()){
         char *entry = (char*)malloc(sizeof(char));
-        entry= '\0';
+        entry[0]= '\0';
         bool newEntry = false;
         while(!newEntry){
-            entry = (char*)realloc(entry, strlen(entry) + sizeof(char));
+            entry = (char*)realloc(entry, strlen(entry) + 2);
             uint8_t charRead[2] = {0,0};
             userList.read(charRead,sizeof(char));
+            strcat(entry,(char*) charRead);
             if(charRead[0] == '\n'){
                 newEntry = true;
                 break;
             }
-            strcat(entry,(char*) charRead);
         }
         csv_str = (char*)realloc(csv_str, strlen(csv_str) + strlen(entry) + 1);
         strcat(csv_str,entry);
@@ -133,7 +133,7 @@ bool checkForPresence(String id, bool office, bool shop){
     char **strings = (char**)csvP["ID"];
     uint8_t *officeVal = (uint8_t *)csvP["InOffice"];
     uint8_t *shopVal = (uint8_t *)csvP["InShop"];
-    bool present;
+    bool present = false;
     for(int i = 0; i < csvP.getRowsCount(); i++){
         if(strcmp(strings[i],idPtr) == 0){
             if(office){
