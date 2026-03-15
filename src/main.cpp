@@ -80,11 +80,6 @@ void loop() {
   if (WiFiIsConnected()) {
     server.handleClient();
   }
-  //Adds data block for the MIRARE_Write
-  byte dataBlock[16] = {
-  'T','I','G','E','R',' ','R','A','C','I','N','G',' ','!','!','!'
-  };
-
 
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
@@ -109,29 +104,6 @@ void loop() {
   Serial.println(F("**Card Detected:**")); 
   mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid)); 
   
-  static unsigned long lastPrint = 0;
-  if (millis() - lastPrint > 10000) {
-    if (WiFiIsConnected()) {
-      Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-    } else {
-      Serial.print("Status: ");
-      WiFiPrintStatus(WiFiStatus());
-    }
-    lastPrint = millis();
-  }
-  byte buffer[16];
-  char userID[17];
-  for(int i =0; i < 16; i++){
-    userID[i] = buffer[i];
-  }
-  userID[16] = '\0';
-  bool check_in = checkForPresense(userID,true,false);
-  if(check_in){
-    getLocalTime(&time_info);
-    addTimestamp(userID,&time_info);
-  }
-  
-  Serial.print(F("Name: ")); 
   delay(1000);
   setColor(0, 0, 0);
 
@@ -153,10 +125,7 @@ void loop() {
     flashColor(255, 0, 0, 3, 100, 100);
     return;
   }
-
-  //Sets up the writing for MIFARE
-  status = mfrc522.MIFARE_Write(block, dataBlock, 16);
-
+ 
   //If status falled for MIFARE_Write, then the write fails and blinks red to indicate so 
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("Write failed: "));
@@ -179,10 +148,13 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
-
+  char *userID = (char*) buffer1;
+  userID[17] = '\0';
+  bool check_in = checkForPresense(userID,true,false);
+  getLocalTime(&time_info);
+  addTimestamp(userID,&time_info,check_in);
   //Blinking green LED indicates the card being read was a success 
   flashColor(0, 255, 0, 3, 100, 100);
-
   //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
   for (uint8_t i = 0; i < 16; i++) {
     Serial.write(buffer1[i] );
