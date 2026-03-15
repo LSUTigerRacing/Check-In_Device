@@ -6,7 +6,7 @@ void fileCreate(char *path, String month){
         path[6+i] = month.charAt(i);
     }
     File file = SD.open(path,FILE_WRITE);
-    file.printf("%s","Day,Time,User\n");
+    file.printf("%s","User,Day,Time,Present\n");
     file.close();
 }
 
@@ -36,7 +36,7 @@ void YearFolder_init(int year){
 }
 
 
-void addTimestamp(String user,struct tm* timestamp){
+void addTimestamp(String user,struct tm* timestamp,bool present){
     char month_filepath[13];
     itoa(timestamp->tm_year+1900,month_filepath,10);
     switch(timestamp->tm_mon){
@@ -82,7 +82,7 @@ void addTimestamp(String user,struct tm* timestamp){
         Serial.print("Failed to open ");
         Serial.println(month_filepath);
     }
-    String entry = timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
+    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
     month_file.printf("%s",entry.c_str());
     month_file.close();
 }
