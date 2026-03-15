@@ -148,8 +148,9 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
-  char *userID = (char*) buffer1;
-  userID[17] = '\0';
+  char userID[17];
+  memcpy(userID,buffer1,16 *sizeof(char));
+  userID[16] = '\0';
   bool check_in = checkForPresense(userID,true,false);
   getLocalTime(&time_info);
   addTimestamp(userID,&time_info,check_in);
