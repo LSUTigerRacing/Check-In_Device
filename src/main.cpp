@@ -156,12 +156,7 @@ void loop() {
     //RemoveInShop(userID);
     flashColor(255, 215, 0, 3, 100, 100); //blinks gold 3 times
     }
-  //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
-  for (uint8_t i = 0; i < 16; i++) {
-    Serial.write(buffer1[i] );
-  }
 
-  Serial.println(F("\n**End Reading**\n")); 
 
   //Delays for 1 second and stops everything else 
   delay(1000); 
