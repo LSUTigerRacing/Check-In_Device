@@ -138,26 +138,28 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
-  else{
-    String uid;
-    for(uint8_t i = 0; i < 16; i++){
-      uid += buffer1[i];
-      Serial.write(buffer1[i]); //For debugging
-    }
-    //Add SD check for both to see if user has entered
-    bool present;
-
-    //Unhighlight based on deployment
-    if(present){
-      RemoveInOffice(uid);
-      //RemoveInShop(uid);
-      flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
+  char userID[17];
+  memcpy(userID,buffer1,16 *sizeof(char));
+  userID[16] = '\0';
+  bool present = checkForPresense(userID,true,false);
+  getLocalTime(&time_info);
+  addTimestamp(userID,&time_info,present);
+  //Uncomment based on deployment
+  if(present){
+    AddInOffice(userID);
+    //AddInShop(userID);
+    flashColor(0, 255, 0, 3, 100, 100); //blinks green 3 times
     }
     else{
-      RemoveInOffice(userID);
-      //RemoveInShop(userID);
-      flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
+    RemoveInOffice(userID);
+    //RemoveInShop(userID);
+    flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
     }
+  //Blinking green LED indicates the card being read was a success 
+  flashColor(0, 255, 0, 3, 100, 100);
+  //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
+  for (uint8_t i = 0; i < 16; i++) {
+    Serial.write(buffer1[i] );
   }
 
   Serial.println(F("\n**End Reading**\n")); 
