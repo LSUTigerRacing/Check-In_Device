@@ -77,10 +77,6 @@ void setup() {
 }
 
 void loop() {
-  if (WiFiIsConnected()) {
-    server.handleClient();
-  }
-
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
   for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF; 
@@ -138,25 +134,28 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
+  //Blinking green LED indicates the card being read was a success 
+  flashColor(0, 255, 0, 1, 100, 100);
   char userID[17];
   memcpy(userID,buffer1,16 *sizeof(char));
   userID[16] = '\0';
   bool present = checkForPresense(userID,true,false);
   getLocalTime(&time_info);
   addTimestamp(userID,&time_info,present);
+  if (WiFiIsConnected()) {
+    server.handleClient();
+  }
   //Uncomment based on deployment
   if(present){
     AddInOffice(userID);
     //AddInShop(userID);
-    flashColor(0, 255, 0, 3, 100, 100); //blinks green 3 times
+    flashColor(128, 0, 128, 3, 100, 100); //blinks purple 3 times
     }
     else{
     RemoveInOffice(userID);
     //RemoveInShop(userID);
-    flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
+    flashColor(255, 215, 0, 3, 100, 100); //blinks gold 3 times
     }
-  //Blinking green LED indicates the card being read was a success 
-  flashColor(0, 255, 0, 3, 100, 100);
   //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
   for (uint8_t i = 0; i < 16; i++) {
     Serial.write(buffer1[i] );
