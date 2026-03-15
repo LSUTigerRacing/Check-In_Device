@@ -1,3 +1,4 @@
+#include "MySD.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
@@ -13,12 +14,19 @@
 #define MOSI            11
 #define SCLK            12
 
+#define SD_CS_PIN 9
+
 const char* ssid = "eduroam";
 
 #define EAP_IDENTITY "@lsu.edu"
 #define EAP_USERNAME "@lsu.edu"
 #define EAP_PASSWORD "pass"
 
+const char* ntp_server = "pool.ntp.org";
+//This puts the time to GMT-6 which correlates to CST
+const long gmtOffset_sec = -21600;
+const long daylightOffset_sec = 3600;
+struct tm time_info;
 WebServer server(80);
 MFRC522 mfrc522(SS_PIN,RST_PIN);
 
@@ -45,7 +53,7 @@ void setup() {
 
     // initialize supabase
     supabaseBegin("SupabaseURL", "SupabaseKey");
-
+    configTime(gmtOffset_sec,daylightOffset_sec,ntp_server);
     setupRootHandler(server);
     server.begin();
     Serial.println("Web server started successfully.");
@@ -54,6 +62,18 @@ void setup() {
     Serial.print("Final Status Code: ");
     WiFiPrintStatus(WiFiStatus());
   }
+
+  if(SD.begin(SD_CS_PIN)){
+    Serial.println("SD card module detected");
+    getLocalTime(&time_info);
+    YearFolder_init(time_info.tm_hour);
+    String userList;
+    userSDInit(userList);
+  }
+  else{
+    Serial.println("SD card module not detected");
+  }
+
 }
 
 void loop() {
@@ -84,20 +104,6 @@ void loop() {
   Serial.println(F("**Card Detected:**")); 
   mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid)); 
   
-  static unsigned long lastPrint = 0;
-  if (millis() - lastPrint > 10000) {
-    if (WiFiIsConnected()) {
-      Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
-      AddUserSupabase("asd"); // will be changed later
-      supabaseResetQuery();
-    } else {
-      Serial.print("Status: ");
-      WiFiPrintStatus(WiFiStatus());
-    }
-    lastPrint = millis();
-  }
-  
-  Serial.print(F("Name: ")); 
   delay(1000);
   setColor(0, 0, 0);
 
@@ -132,26 +138,28 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
-  else{
-    String uid;
-    for(uint8_t i = 0; i < 16; i++){
-      uid += buffer1[i];
-      Serial.write(buffer1[i]); //For debugging
-    }
-    //Add SD check for both to see if user has entered
-    bool present;
-
-    //Unhighlight based on deployment
-    if(present){
-      RemoveInOffice(uid);
-      //RemoveInShop(uid);
-      flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
+  char userID[17];
+  memcpy(userID,buffer1,16 *sizeof(char));
+  userID[16] = '\0';
+  bool check_in = checkForPresense(userID,true,false);
+  getLocalTime(&time_info);
+  addTimestamp(userID,&time_info,check_in);
+  //Uncomment based on deployment
+  if(present){
+    RemoveInOffice(userID);
+    //RemoveInShop(userID);
+    flashColor(0, 0, 255, 3, 100, 100); //blinks blue 3 times
     }
     else{
-      AddInOffice(uid);
-      //AddInShop(uid);
+      AddInOffice(userID);
+      //AddInShop(userID);
       flashColor(0, 255, 0, 3, 100, 100); //blinks green 3 times
     }
+  //Blinking green LED indicates the card being read was a success 
+  flashColor(0, 255, 0, 3, 100, 100);
+  //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
+  for (uint8_t i = 0; i < 16; i++) {
+    Serial.write(buffer1[i] );
   }
 
   Serial.println(F("\n**End Reading**\n")); 
@@ -161,3 +169,4 @@ void loop() {
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
 }
+ 
