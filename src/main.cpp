@@ -81,6 +81,18 @@ void loop() {
     server.handleClient();
   }
 
+  static unsigned long lastPrint = 0;
+  if (millis() - lastPrint > 10000) {
+    if (WiFiIsConnected()) {
+      Serial.printf("Status: CONNECTED | IP: %s | RSSI: %d\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+      //AddUserSupabase("asd", "asd"); // will be changed later
+      supabaseResetQuery();
+    } else {
+      Serial.print("Status: ");
+      WiFiPrintStatus(WiFiStatus());
+    }
+    lastPrint = millis();
+  }
   //Creates and sets the key to default key
   MFRC522::MIFARE_Key key; 
   for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF; 
