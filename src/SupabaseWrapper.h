@@ -7,7 +7,7 @@
 void supabaseBegin(const String& url, const String& key);
 
 // Insert a user record (returns HTTP code)
-void AddUserSupabase(const String user);
+void AddUserSupabase(const String user, String table);
 
 // Insert a user record in Office (returns HTTP code)
 void AddInOffice(String user);
@@ -21,5 +21,13 @@ void RemoveInOffice(String user);
 // Remove a user record from Shop(returns HTTP code)
 void RemoveInShop(String user);
 
+void RemoveUser(String user, String table);
+
 // Reset the internal query builder state (call after operations)
 void supabaseResetQuery();
+
+void GetAllOffice();
+
+void GetAllShop();
+
+void GetAllUsers(String table);
