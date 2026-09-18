@@ -13,7 +13,7 @@ void fileCreate(char *path, String month){
         path[6+i] = month.charAt(i);
     }
     File file = SD.open(path,FILE_WRITE);
-    file.printf("%s","Day,Time,User\n");
+    file.printf("%s","User,Day,Time,Present\n");
     file.close();
 }
 
@@ -99,7 +99,7 @@ void addTimestamp(String user,struct tm* timestamp){
         Serial.print("Failed to open ");
         Serial.println(month_filepath);
     }
-    String entry = timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
+    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
     month_file.printf("%s",entry.c_str());
     month_file.close();
 }

@@ -7,7 +7,7 @@
 void YearFolder_init(int year);
 
 //Add to the month's file with the entry of the user and when the user entered
-void addTimestamp(String user, struct tm* time_info);
+void addTimestamp(String user, struct tm* time_info,bool present);
 
 //Creates a csv file for user look up
 void userSDInit(String userList);
