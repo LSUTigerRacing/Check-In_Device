@@ -137,16 +137,6 @@ void loop() {
     flashColor(255, 0, 0, 3, 100, 100);
     return;
   }
- 
-  //If status falled for MIFARE_Write, then the write fails and blinks red to indicate so 
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Write failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    flashColor(255, 0, 0, 3, 100, 100);
-    return;
-  }
-
-  Serial.println(F("Write success"));
 
   byte buffer1[18]; 
   block = 4; 
@@ -160,20 +150,29 @@ void loop() {
       flashColor(255, 0, 0, 3, 100, 100); //Blinking red LED indicates the reading failed
     return;
   }
+  //Blinking green LED indicates the card being read was a success 
+  flashColor(0, 255, 0, 1, 100, 100);
   char userID[17];
   memcpy(userID,buffer1,16 *sizeof(char));
   userID[16] = '\0';
-  bool check_in = checkForPresense(userID,true,false);
+  bool present = checkForPresense(userID,true,false);
   getLocalTime(&time_info);
-  addTimestamp(userID,&time_info,check_in);
-  //Blinking green LED indicates the card being read was a success 
-  flashColor(0, 255, 0, 3, 100, 100);
-  //If the card being read was a success then it goes to each byte from the card and prints the bytes to the serial monitor
-  for (uint8_t i = 0; i < 16; i++) {
-    Serial.write(buffer1[i] );
+  addTimestamp(userID,&time_info,present);
+  if (WiFiIsConnected()) {
+    server.handleClient();
   }
+  //Uncomment based on deployment
+  if(present){
+    AddInOffice(userID);
+    //AddInShop(userID);
+    flashColor(128, 0, 128, 3, 100, 100); //blinks purple 3 times
+    }
+    else{
+    RemoveInOffice(userID);
+    //RemoveInShop(userID);
+    flashColor(255, 215, 0, 3, 100, 100); //blinks gold 3 times
+    }
 
-  Serial.println(F("\n**End Reading**\n")); 
 
   //Delays for 1 second and stops everything else 
   delay(1000); 

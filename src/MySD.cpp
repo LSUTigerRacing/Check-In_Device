@@ -1,6 +1,13 @@
 #include "MySD.h"
 
-//Helper function to create a new file inside year folder when initializing 
+//File structure goes Year -> Month.csv then indivdual entries inside month files that tracks day, time, location, and entering or leaving
+
+/**
+ * @brief Creates a new month file 
+ * 
+ * @param path Year that we are adding a new month to
+ * @param month New month csv
+ */
 void fileCreate(char *path, String month){
     for(int i = 0; i < month.length(); i++){
         path[6+i] = month.charAt(i);
@@ -10,6 +17,11 @@ void fileCreate(char *path, String month){
     file.close();
 }
 
+/**
+ * @brief Creates a year folder
+ * 
+ * @param year The current year we are in
+ */
 void YearFolder_init(int year){
     char year_path[5];
     itoa(year+1900,year_path,10);
@@ -35,8 +47,13 @@ void YearFolder_init(int year){
     fileCreate(month_fp, "Dec.csv");
 }
 
-
-void addTimestamp(String user,struct tm* timestamp,bool present){
+/**
+ * @brief Logs the time someone uses device
+ * 
+ * @param user The user
+ * @param timestamp When this interaction occurred
+ */
+void addTimestamp(String user,struct tm* timestamp){
     char month_filepath[13];
     itoa(timestamp->tm_year+1900,month_filepath,10);
     switch(timestamp->tm_mon){
@@ -82,11 +99,16 @@ void addTimestamp(String user,struct tm* timestamp,bool present){
         Serial.print("Failed to open ");
         Serial.println(month_filepath);
     }
-    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
+    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + present + "\n";
     month_file.printf("%s",entry.c_str());
     month_file.close();
 }
 
+/**
+ * @brief Initalize the cache of the database
+ * 
+ * @param userList All users
+ */
 void userSDInit(String userList){
     if(SD.exists("UserList.csv")){
         SD.remove("UserList.csv");
@@ -103,6 +125,15 @@ void userSDInit(String userList){
     userFile.close();
 }
 
+/**
+ * @brief Checks where the user is located either shop or office depending on what param is true
+ * 
+ * @param id Id of user
+ * @param office Flag to check office location
+ * @param shop  Flag to check for shop locaiton
+ * @return true If inside requested location 
+ * @return false If not inside requested location
+ */
 bool checkForPresence(String id, bool office, bool shop){
     const char* idPtr = id.c_str();
     File userList = SD.open("UserList.csv",FILE_READ);
