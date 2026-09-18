@@ -99,7 +99,7 @@ void addTimestamp(String user,struct tm* timestamp){
         Serial.print("Failed to open ");
         Serial.println(month_filepath);
     }
-    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + user + "\n";
+    String entry = user + ',' + timestamp->tm_mday + ',' + timestamp->tm_hour + ':' + timestamp->tm_min + ',' + present + "\n";
     month_file.printf("%s",entry.c_str());
     month_file.close();
 }
